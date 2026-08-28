@@ -27,4 +27,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/KevinLuiz10/IRSocial:latest
+          tags: ghcr.io/kevinluiz10/irsocial:latest
