@@ -4,7 +4,8 @@
     "description": "",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node server.js",
+        "importar": "node scripts/importar-planilha.js"
     },
     "keywords": [],
     "author": "",
@@ -12,6 +13,7 @@
     "dependencies": {
         "cors": "^2.8.6",
         "express": "^5.2.1",
-        "pg": "^8.23.0"
+        "pg": "^8.23.0",
+        "xlsx": "^0.18.5"
     }
 }
