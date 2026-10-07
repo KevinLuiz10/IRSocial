@@ -1,32 +1,27 @@
-import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/layout/Layout";
+import Home from "./pages/Home";
+import Context from "./pages/Context";
+import HowToDonate from "./pages/HowToDonate";
+import Transparency from "./pages/Transparency";
+import About from "./pages/About";
+import NotFound from "./pages/NotFound";
 
 function App() {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    // Como o front e o back rodam na mesma porta via Docker, a chamada é direta
-    fetch('/api/status')
-      .then(res => res.json())
-      .then(data => setData(data))
-      .catch(err => console.error(err))
-  }, [])
-
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Fundação IRSocial 🚀</h1>
-      <div style={{ padding: '1rem', background: '#f0f0f0', borderRadius: '8px' }}>
-        <h3>Status da Comunicação:</h3>
-        {data ? (
-          <>
-            <p><strong>Mensagem:</strong> {data.status}</p>
-            <p><strong>Horário do Banco:</strong> {data.db_time}</p>
-          </>
-        ) : (
-          <p>Conectando ao backend...</p>
-        )}
-      </div>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/contexto" element={<Context />} />
+          <Route path="/como-doar" element={<HowToDonate />} />
+          <Route path="/transparencia" element={<Transparency />} />
+          <Route path="/sobre" element={<About />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
