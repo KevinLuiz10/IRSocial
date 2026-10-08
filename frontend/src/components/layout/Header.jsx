@@ -1,61 +1,68 @@
-import { Link, NavLink } from "react-router-dom";
-import { HeartHandshake, Menu, X } from "lucide-react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import Logo from "../common/Logo";
 
 const links = [
-  { to: "/", label: "Início" },
-  { to: "/contexto", label: "Entenda a doação" },
-  { to: "/como-doar", label: "Como fazer" },
-  { to: "/transparencia", label: "Mapa de transparência" },
-  { to: "/sobre", label: "Sobre o projeto" },
+  { to: "/", label: "Início", end: true },
+  { to: "/entenda", label: "Entenda" },
+  { to: "/passo-a-passo", label: "Passo a passo" },
+  { to: "/transparencia", label: "Transparência" },
+  { to: "/sobre", label: "Sobre" },
 ];
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+  // Guarda em qual página o menu foi aberto: ao navegar, ele fecha sozinho.
+  const [abertoEm, setAbertoEm] = useState(null);
+  const menuAberto = abertoEm === pathname;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
         <Link
           to="/"
-          className="flex items-center gap-2 text-xl font-bold text-emerald-700"
-          aria-label="IR Social - Página inicial"
+          className="flex items-center gap-2.5 font-serif text-xl font-bold text-ink no-underline"
         >
-          <HeartHandshake size={28} aria-hidden="true" />
-          <span>IR Social</span>
+          <Logo className="size-8" />
+          IR Social
         </Link>
 
         <button
-          className="rounded-lg p-2 text-slate-700 md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
-          aria-expanded={menuOpen}
+          type="button"
+          className="-mr-2 inline-flex size-11 items-center justify-center rounded-md text-ink md:hidden"
+          onClick={() => setAbertoEm(menuAberto ? null : pathname)}
+          aria-expanded={menuAberto}
+          aria-controls="menu-principal"
         >
-          {menuOpen ? <X /> : <Menu />}
+          {menuAberto ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          <span className="sr-only">{menuAberto ? "Fechar menu" : "Abrir menu"}</span>
         </button>
 
         <nav
-          className={`${menuOpen ? "block" : "hidden"} absolute left-0 top-full w-full border-b bg-white p-4 md:static md:block md:w-auto md:border-0 md:p-0`}
+          id="menu-principal"
           aria-label="Navegação principal"
+          className={`${menuAberto ? "block" : "hidden"} absolute inset-x-0 top-16 border-b border-line bg-paper px-4 pb-4 md:static md:block md:border-0 md:bg-transparent md:p-0`}
         >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+          <ul className="flex flex-col md:flex-row md:items-center md:gap-1">
             {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
-                  `text-sm font-medium ${
-                    isActive
-                      ? "text-emerald-700"
-                      : "text-slate-600 hover:text-emerald-700"
-                  }`
-                }
-              >
-                {link.label}
-              </NavLink>
+              <li key={link.to}>
+                <NavLink
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) =>
+                    `block border-b border-line py-3 text-[0.9375rem] font-medium no-underline md:rounded-md md:border-0 md:px-3 md:py-2 ${
+                      isActive
+                        ? "text-brand md:bg-brand-tint"
+                        : "text-ink-soft hover:text-ink md:hover:bg-black/[0.04]"
+                    }`
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              </li>
             ))}
-          </div>
+          </ul>
         </nav>
       </div>
     </header>
