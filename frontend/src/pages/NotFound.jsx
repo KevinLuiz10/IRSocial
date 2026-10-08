@@ -1,26 +1,23 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center px-4 py-16 text-center">
-      <p className="text-8xl font-bold text-emerald-700">404</p>
+    <>
+      <title>Página não encontrada | IR Social</title>
 
-      <h1 className="mt-6 text-3xl font-bold text-slate-900">
-        Página não encontrada
-      </h1>
-
-      <p className="mt-4 text-slate-600">
-        A página que você tentou acessar não existe ou foi movida.
-      </p>
-
-      <Link
-        to="/"
-        className="mt-8 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
-      >
-        <ArrowLeft size={18} aria-hidden="true" />
-        Voltar para a página inicial
-      </Link>
-    </div>
+      <div className="mx-auto max-w-2xl px-4 py-24 sm:px-6">
+        <p className="eyebrow">Erro 404</p>
+        <h1 className="mt-2 text-4xl font-bold">Não encontramos esta página</h1>
+        <p className="mt-4 text-lg text-ink-soft">
+          O endereço pode ter mudado ou ter sido digitado errado. Talvez você
+          esteja procurando uma destas:
+        </p>
+        <ul className="mt-6 space-y-2 text-lg">
+          <li><Link to="/">Página inicial</Link></li>
+          <li><Link to="/passo-a-passo">Passo a passo do DARF</Link></li>
+          <li><Link to="/transparencia">Repasses por município</Link></li>
+        </ul>
+      </div>
+    </>
   );
 }
