@@ -29,6 +29,15 @@ export async function apiFetch(endpoint, { params, ...options } = {}) {
     );
   }
 
+  // Se o backend devolver a pagina HTML do React, nao tentar interpreta-la como JSON.
+  const tipo = response.headers.get("content-type") || "";
+  if (!tipo.toLowerCase().includes("application/json")) {
+    throw new ApiError(
+      "A API não retornou JSON. Verifique se as rotas /api estão configuradas no backend.",
+      response.status
+    );
+  }
+
   if (!response.ok) {
     const corpo = await response.json().catch(() => null);
     const mensagem =

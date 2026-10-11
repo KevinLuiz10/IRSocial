@@ -5,7 +5,9 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "importar": "node scripts/importar-planilha.js"
+        "importar": "node scripts/importar-planilha.js",
+        "importar:receita": "node scripts/importar-receita-html.js",
+        "test": "node --test tests/*.test.js"
     },
     "keywords": [],
     "author": "",

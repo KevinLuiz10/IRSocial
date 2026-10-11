@@ -1,0 +1,9 @@
+# Segredos e arquivos de maquina local nao entram na imagem.
+.env
+**/.env.local
+**/.env.*.local
+**/node_modules
+**/dist
+**/.git
+**/.DS_Store
+*.zip

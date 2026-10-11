@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
+const { criarRotasRepasses } = require('./routes-repasses');
 
 const app = express();
 const port = 8080;
@@ -20,11 +21,25 @@ app.get('/api/status', async (req, res) => {
     }
 });
 
+// Rotas oficiais de repasses (antes do fallback HTML do React).
+app.use('/api', criarRotasRepasses(pool));
+
 // Servir os arquivos estáticos do React (que serão copiados pelo Docker)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Redirecionar qualquer outra rota para o React Router lidar
-app.get('*', (req, res) => {
+// Rotas de API inexistentes devem retornar JSON (nunca o HTML do React).
+app.use('/api', (req, res) => {
+    res.status(404).json({ erro: 'Rota da API não encontrada.' });
+});
+
+// Erros da API precisam retornar JSON, inclusive falhas de conexao/migracao.
+app.use('/api', (err, req, res, next) => {
+    console.error('Erro na API:', err);
+    res.status(500).json({ erro: 'Nao foi possivel consultar os dados no banco. Verifique a migracao e a conexao.' });
+});
+
+// Em Express 5, usar middleware final em vez do padrao antigo app.get('*').
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

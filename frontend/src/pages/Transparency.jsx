@@ -5,6 +5,7 @@ import PageHeader from "../components/common/PageHeader";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
 import DemoNotice from "../components/repasses/DemoNotice";
+import FonteReceita from "../components/repasses/FonteReceita";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
 import { useRequest } from "../hooks/useRequest";
 import { listarAnos, listarRepasses, obterResumo } from "../services/repasseService";
@@ -43,12 +44,12 @@ export default function Transparency() {
 
   return (
     <>
-      <title>Repasses por município | IR Social</title>
+      <title>Destinações por município | IR Social</title>
 
-      <PageHeader eyebrow="Transparência" titulo="Quanto cada município do Paraná recebeu">
-        Valores que os contribuintes destinaram aos fundos da criança e do
-        idoso pela declaração do Imposto de Renda, segundo dados da Receita
-        Federal.
+      <PageHeader eyebrow="Transparência" titulo="Destinações do IR por município do Paraná">
+        Valores destinados aos fundos da criança e do idoso na declaração do
+        Imposto de Renda. Destinação declarada não é comprovante de aplicação
+        do recurso em projetos.
         {anos.data?.ultimaAtualizacao && (
           <span className="mt-3 block text-[0.9375rem] text-ink-muted">
             Última atualização dos dados: {formatarData(anos.data.ultimaAtualizacao)}
@@ -58,11 +59,17 @@ export default function Transparency() {
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6">
         <DemoNotice />
+        <FonteReceita ano={ano || 2025} />
 
         {anos.error && !anos.data ? (
           <ErrorMessage erro={anos.error} onRetry={anos.retry} />
-        ) : !ano ? (
+        ) : !anos.data ? (
           <Loading linhas={4} />
+        ) : !ano ? (
+          <p className="rounded-md border border-line p-6 text-ink-soft">
+            Nenhum ano com dados oficiais importados ainda. Execute a importação
+            da Receita Federal conforme o guia do projeto.
+          </p>
         ) : (
           <>
             <ResumoAno ano={ano} />
@@ -105,10 +112,15 @@ function ResumoAno({ ano }) {
     );
   }
 
-  const indicadores = [
-    { rotulo: `Total destinado em ${data.ano}`, valor: data.valorTotal, destaque: true },
-    { rotulo: "Criança e Adolescente", valor: data.valorFdca, cor: "bg-fdca" },
-    { rotulo: "Pessoa Idosa", valor: data.valorFdi, cor: "bg-fdi" },
+  const oficiais = data.percentualFdca != null;
+  const indicadores = oficiais ? [
+    { rotulo: `Total destinado em ${data.ano}`, valor: formatarMoedaCompacta(data.valorTotal), destaque: true, completo: formatarMoeda(data.valorTotal) },
+    { rotulo: "Doações declaradas", valor: formatarInteiro(data.doacoesTotal) },
+    { rotulo: "DARFs pagos", valor: formatarMoedaCompacta(data.valorDarf), completo: formatarMoeda(data.valorDarf) },
+  ] : [
+    { rotulo: `Total destinado em ${data.ano}`, valor: formatarMoedaCompacta(data.valorTotal), destaque: true, completo: formatarMoeda(data.valorTotal) },
+    { rotulo: "Criança e Adolescente", valor: formatarMoedaCompacta(data.valorFdca), completo: formatarMoeda(data.valorFdca), cor: "bg-fdca" },
+    { rotulo: "Pessoa Idosa", valor: formatarMoedaCompacta(data.valorFdi), completo: formatarMoeda(data.valorFdi), cor: "bg-fdi" },
   ];
 
   return (
@@ -123,18 +135,29 @@ function ResumoAno({ ano }) {
             </dt>
             <dd
               className={`mt-1 font-serif font-bold tabular-nums ${item.destaque ? "text-3xl" : "text-2xl"}`}
-              title={formatarMoeda(item.valor)}
+              title={item.completo || item.valor}
             >
-              {formatarMoedaCompacta(item.valor)}
+              {item.valor}
             </dd>
           </div>
         ))}
       </dl>
       <div className="mt-4">
-        <FundSplitBar fdca={data.valorFdca} fdi={data.valorFdi} altura="h-2" />
+        <FundSplitBar fdca={data.valorFdca} fdi={data.valorFdi}
+          percentualFdca={data.percentualFdca} percentualFdi={data.percentualFdi}
+          valorTotal={data.valorTotal} altura="h-2" />
+        {oficiais && <p className="mt-2 text-sm text-ink-soft">
+          Criança e Adolescente: {data.percentualFdca.toFixed(1)}% · Pessoa Idosa: {data.percentualFdi.toFixed(1)}%
+          <span className="text-ink-muted"> (percentuais divulgados pela Receita)</span>
+        </p>}
       </div>
       <p className="mt-2 text-sm text-ink-muted">
-        Soma de {formatarInteiro(data.municipios)} municípios com repasse no ano.
+        {formatarInteiro(data.municipios)} municípios com dados publicados no ano.
+        {oficiais && data.estadualValor > 0 && (
+          <span className="block mt-1">O total do Paraná inclui também {formatarMoeda(data.estadualValor)}
+            em destinações à linha ESTADUAL ({formatarInteiro(data.estadualDoacoes)} doações),
+            apresentada separadamente dos municípios na fonte.</span>
+        )}
       </p>
     </section>
   );
@@ -146,6 +169,9 @@ function Filtros({ anos, ano, busca, ordem, onChange }) {
   const timer = useRef(null);
 
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    setTexto(busca);
+  }, [busca]);
 
   function digitar(valor) {
     setTexto(valor);
@@ -218,10 +244,12 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
   if (!data) return <div className="mt-6"><Loading linhas={8} /></div>;
 
   const { itens, total } = data;
+  const paginaAtual = data.pagina;
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  const inicio = total ? (pagina - 1) * POR_PAGINA + 1 : 0;
-  const fim = Math.min(pagina * POR_PAGINA, total);
+  const inicio = total ? (paginaAtual - 1) * POR_PAGINA + 1 : 0;
+  const fim = Math.min(paginaAtual * POR_PAGINA, total);
   const maior = Math.max(...itens.map((i) => i.valorTotal), 0);
+  const oficiais = itens.some((i) => i.percentualFdca != null);
   const voltar = { voltar: location.search };
 
   return (
@@ -236,6 +264,7 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
         </p>
         <FundLegend />
       </div>
+      {oficiais && <p className="mb-2 text-xs text-ink-muted">Distribuição percentual entre fundos (valores individuais exatos não publicados nesta fonte).</p>}
 
       {total === 0 ? (
         <div className="rounded-md border border-dashed border-line-strong p-8 text-center">
@@ -250,7 +279,7 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
           {/* Telas médias e grandes: tabela */}
           <table className="hidden w-full border-collapse text-left md:table">
             <caption className="sr-only">
-              Repasses aos fundos por município em {ano}, página {pagina} de {totalPaginas}
+              Repasses aos fundos por município em {ano}, página {paginaAtual} de {totalPaginas}
             </caption>
             <thead>
               <tr className="border-b-2 border-ink text-sm text-ink-soft">
@@ -258,8 +287,8 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                 <th scope="col" className="w-[26%] py-2 pr-4 font-semibold">
                   <span className="sr-only">Distribuição entre os fundos</span>
                 </th>
-                <th scope="col" className="py-2 pr-4 text-right font-semibold">Criança e Adolescente</th>
-                <th scope="col" className="py-2 pr-4 text-right font-semibold">Pessoa Idosa</th>
+                <th scope="col" className="py-2 pr-4 text-right font-semibold">Criança e Adolescente{oficiais ? " (%)" : ""}</th>
+                <th scope="col" className="py-2 pr-4 text-right font-semibold">Pessoa Idosa{oficiais ? " (%)" : ""}</th>
                 <th scope="col" className="py-2 text-right font-semibold">Total</th>
               </tr>
             </thead>
@@ -272,10 +301,12 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                     </Link>
                   </th>
                   <td className="py-3 pr-4">
-                    <FundSplitBar fdca={item.valorFdca} fdi={item.valorFdi} maximo={maior} />
+                    <FundSplitBar fdca={item.valorFdca} fdi={item.valorFdi}
+                      percentualFdca={item.percentualFdca} percentualFdi={item.percentualFdi}
+                      valorTotal={item.valorTotal} maximo={maior} />
                   </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{formatarMoeda(item.valorFdca)}</td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{formatarMoeda(item.valorFdi)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</td>
                   <td className="py-3 text-right font-semibold tabular-nums">{formatarMoeda(item.valorTotal)}</td>
                 </tr>
               ))}
@@ -293,16 +324,18 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                   <span className="font-semibold tabular-nums">{formatarMoeda(item.valorTotal)}</span>
                 </div>
                 <div className="mt-2">
-                  <FundSplitBar fdca={item.valorFdca} fdi={item.valorFdi} maximo={maior} />
+                  <FundSplitBar fdca={item.valorFdca} fdi={item.valorFdi}
+                      percentualFdca={item.percentualFdca} percentualFdi={item.percentualFdi}
+                      valorTotal={item.valorTotal} maximo={maior} />
                 </div>
                 <dl className="mt-2 flex flex-wrap gap-x-5 text-sm text-ink-soft">
                   <div className="flex gap-1">
                     <dt>Criança:</dt>
-                    <dd className="tabular-nums">{formatarMoeda(item.valorFdca)}</dd>
+                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</dd>
                   </div>
                   <div className="flex gap-1">
                     <dt>Idoso:</dt>
-                    <dd className="tabular-nums">{formatarMoeda(item.valorFdi)}</dd>
+                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</dd>
                   </div>
                 </dl>
               </li>
@@ -314,20 +347,20 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
               <button
                 type="button"
                 className="btn btn-secondary"
-                disabled={pagina <= 1}
-                onClick={() => onPagina(pagina - 1)}
+                disabled={paginaAtual <= 1}
+                onClick={() => onPagina(paginaAtual - 1)}
               >
                 <ChevronLeft size={18} aria-hidden="true" />
                 Anterior
               </button>
               <span className="text-[0.9375rem] text-ink-soft">
-                Página {pagina} de {totalPaginas}
+                Página {paginaAtual} de {totalPaginas}
               </span>
               <button
                 type="button"
                 className="btn btn-secondary"
-                disabled={pagina >= totalPaginas}
-                onClick={() => onPagina(pagina + 1)}
+                disabled={paginaAtual >= totalPaginas}
+                onClick={() => onPagina(paginaAtual + 1)}
               >
                 Próxima
                 <ChevronRight size={18} aria-hidden="true" />
