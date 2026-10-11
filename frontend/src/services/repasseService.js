@@ -6,6 +6,10 @@ import * as mock from "../data/repassesMock";
 // (v_repasse_municipio_ano etc.) e converte os NUMERIC, que o driver pg
 // devolve como string, para número.
 
+function opcional(valor) {
+  return valor === undefined || valor === null ? null : num(valor);
+}
+
 function num(valor) {
   const n = Number(valor);
   return Number.isFinite(n) ? n : 0;
@@ -16,11 +20,18 @@ function normalizarRepasse(linha) {
     municipioId: linha.municipioId ?? linha.municipio_id,
     municipio: linha.municipio ?? linha.nome,
     ano: linha.ano !== undefined ? num(linha.ano) : undefined,
-    valorFdca: num(linha.valorFdca ?? linha.valor_fdca),
-    valorFdi: num(linha.valorFdi ?? linha.valor_fdi),
+    valorFdca: opcional(linha.valorFdca ?? linha.valor_fdca),
+    valorFdi: opcional(linha.valorFdi ?? linha.valor_fdi),
     valorTotal: num(linha.valorTotal ?? linha.valor_total),
-    doacoesFdca: num(linha.doacoesFdca ?? linha.doacoes_fdca),
-    doacoesFdi: num(linha.doacoesFdi ?? linha.doacoes_fdi),
+    doacoesFdca: opcional(linha.doacoesFdca ?? linha.doacoes_fdca),
+    doacoesFdi: opcional(linha.doacoesFdi ?? linha.doacoes_fdi),
+    percentualFdca: opcional(linha.percentualFdca ?? linha.percentual_fdca),
+    percentualFdi: opcional(linha.percentualFdi ?? linha.percentual_fdi),
+    doacoesTotal: opcional(linha.doacoesTotal ?? linha.doacoes_total),
+    valorDarf: opcional(linha.valorDarf ?? linha.valor_darf),
+    potencial: opcional(linha.potencial),
+    estadualValor: opcional(linha.estadualValor ?? linha.estadual_valor),
+    estadualDoacoes: opcional(linha.estadualDoacoes ?? linha.estadual_doacoes),
   };
 }
 
