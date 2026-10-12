@@ -5,6 +5,7 @@ import PageHeader from "../components/common/PageHeader";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
 import DemoNotice from "../components/repasses/DemoNotice";
+import MapaRepasses from "../components/repasses/MapaRepasses";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
 import { useRequest } from "../hooks/useRequest";
 import { listarAnos, listarRepasses, obterResumo } from "../services/repasseService";
@@ -65,14 +66,28 @@ export default function Transparency() {
           <Loading linhas={4} />
         ) : (
           <>
+            <div className="no-print flex items-center gap-3">
+              <label htmlFor="ano" className="font-semibold">Ano dos dados</label>
+              <select
+                id="ano"
+                className="field w-32"
+                value={ano}
+                onChange={(e) => alterarFiltro("ano", e.target.value)}
+              >
+                {(anos.data?.anos ?? []).map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+
             <ResumoAno ano={ano} />
 
+            <MapaRepasses ano={ano} />
+
             <section aria-labelledby="titulo-lista">
-              <h2 id="titulo-lista" className="sr-only">Repasses por município</h2>
+              <h2 id="titulo-lista" className="mb-4 text-2xl font-bold">Todos os municípios em {ano}</h2>
 
               <Filtros
-                anos={anos.data?.anos ?? []}
-                ano={ano}
                 busca={busca}
                 ordem={ordem}
                 onChange={alterarFiltro}
@@ -140,7 +155,7 @@ function ResumoAno({ ano }) {
   );
 }
 
-function Filtros({ anos, ano, busca, ordem, onChange }) {
+function Filtros({ busca, ordem, onChange }) {
   // O campo de busca tem estado próprio e só atualiza a URL após uma pausa na digitação
   const [texto, setTexto] = useState(busca);
   const timer = useRef(null);
@@ -154,7 +169,7 @@ function Filtros({ anos, ano, busca, ordem, onChange }) {
   }
 
   return (
-    <div className="no-print grid gap-4 border-b border-line pb-6 sm:grid-cols-[1fr_9rem_13rem]">
+    <div className="no-print grid gap-4 border-b border-line pb-6 sm:grid-cols-[1fr_13rem]">
       <div>
         <label htmlFor="busca" className="block text-[0.9375rem] font-semibold">
           Buscar município
@@ -175,17 +190,6 @@ function Filtros({ anos, ano, busca, ordem, onChange }) {
             onChange={(e) => digitar(e.target.value)}
           />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="ano" className="block text-[0.9375rem] font-semibold">
-          Ano
-        </label>
-        <select id="ano" className="field mt-1.5" value={ano} onChange={(e) => onChange("ano", e.target.value)}>
-          {anos.map((a) => (
-            <option key={a} value={a}>{a}</option>
-          ))}
-        </select>
       </div>
 
       <div>
