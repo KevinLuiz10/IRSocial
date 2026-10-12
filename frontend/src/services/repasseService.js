@@ -1,5 +1,7 @@
 import { apiFetch, USANDO_DADOS_DEMONSTRATIVOS } from "./api";
-import * as mock from "../data/repassesMock";
+
+// Os dados demonstrativos só são baixados quando VITE_USE_MOCK=true
+const carregarMock = () => import("../data/repassesMock");
 
 // Contrato esperado da API (ver relatório de integração). O normalizador aceita
 // tanto camelCase quanto as colunas snake_case das views do banco
@@ -30,7 +32,7 @@ function ultimaAtualizacao(resposta) {
 
 export async function listarAnos() {
   const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await mock.listarAnos()
+    ? await (await carregarMock()).listarAnos()
     : await apiFetch("/repasses/anos");
   return {
     anos: r.anos.map(Number).sort((a, b) => b - a),
@@ -40,7 +42,7 @@ export async function listarAnos() {
 
 export async function obterResumo(ano) {
   const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await mock.obterResumo(ano)
+    ? await (await carregarMock()).obterResumo(ano)
     : await apiFetch("/repasses/resumo", { params: { ano } });
   return {
     ...normalizarRepasse(r),
@@ -52,7 +54,7 @@ export async function obterResumo(ano) {
 export async function listarRepasses({ ano, busca, pagina = 1, limite = 20, ordem }) {
   const params = { ano, busca: busca?.trim(), pagina, limite, ordem };
   const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await mock.listarRepasses(params)
+    ? await (await carregarMock()).listarRepasses(params)
     : await apiFetch("/repasses", { params });
   return {
     itens: (r.itens ?? r.dados ?? []).map(normalizarRepasse),
@@ -63,9 +65,20 @@ export async function listarRepasses({ ano, busca, pagina = 1, limite = 20, orde
   };
 }
 
+// Todos os municípios de um ano, sem paginação: usado pelo mapa
+export async function listarRepassesDoAno(ano) {
+  const r = USANDO_DADOS_DEMONSTRATIVOS
+    ? await (await carregarMock()).listarRepassesDoAno(ano)
+    : await apiFetch("/repasses/mapa", { params: { ano } });
+  return {
+    itens: (r.itens ?? r.dados ?? []).map(normalizarRepasse),
+    ultimaAtualizacao: ultimaAtualizacao(r),
+  };
+}
+
 export async function obterHistoricoMunicipio(municipioId) {
   const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await mock.obterHistoricoMunicipio(municipioId)
+    ? await (await carregarMock()).obterHistoricoMunicipio(municipioId)
     : await apiFetch(`/municipios/${encodeURIComponent(municipioId)}/repasses`);
   return {
     municipio: r.municipio,
@@ -76,7 +89,7 @@ export async function obterHistoricoMunicipio(municipioId) {
 
 export async function listarMunicipios() {
   const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await mock.listarMunicipios()
+    ? await (await carregarMock()).listarMunicipios()
     : await apiFetch("/municipios");
   return r.map((m) => ({ id: m.id, nome: m.nome }));
 }
