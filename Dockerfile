@@ -12,9 +12,13 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm install
 COPY backend/ ./
+# Migracoes SQL tambem devem estar disponiveis para bancos ja existentes.
+COPY db/migrations/ /app/db/migrations/
 
 # Copia os arquivos do React compilados (dist) para a pasta public do backend
 COPY --from=build-frontend /app/frontend/dist ./public
 
 EXPOSE 8080
-CMD ["node", "server.js"]
+# Confere migrações e dados oficiais antes de disponibilizar o servidor.
+# exec entrega os sinais do Docker diretamente ao processo Node/Express.
+CMD ["sh", "-c", "node scripts/preparar-ambiente.js && exec node server.js"]
