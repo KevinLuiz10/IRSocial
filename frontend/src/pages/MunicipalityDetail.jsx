@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
 import DemoNotice from "../components/repasses/DemoNotice";
+import FonteReceita from "../components/repasses/FonteReceita";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
 import { useRequest } from "../hooks/useRequest";
 import { obterHistoricoMunicipio } from "../services/repasseService";
@@ -63,8 +64,12 @@ export default function MunicipalityDetail() {
 
 function Conteudo({ nome, historico, ultimaAtualizacao }) {
   const soma = (campo) => historico.reduce((t, h) => t + h[campo], 0);
-  const totalFdca = soma("valorFdca");
-  const totalFdi = soma("valorFdi");
+  const oficiais = historico.some((h) => h.percentualFdca != null);
+  const totalFdca = oficiais ? null : soma("valorFdca");
+  const totalFdi = oficiais ? null : soma("valorFdi");
+  const totalDestinado = soma("valorTotal");
+  const totalDarf = soma("valorDarf");
+  const totalDoacoes = soma("doacoesTotal");
   const maior = Math.max(...historico.map((h) => h.valorTotal), 0);
   const primeiro = historico[0]?.ano;
   const ultimo = historico.at(-1)?.ano;
@@ -80,6 +85,7 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
 
       <div className="mt-6">
         <DemoNotice />
+        <FonteReceita ano={ultimo || 2025} />
       </div>
 
       {historico.length === 0 ? (
@@ -89,18 +95,22 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
       ) : (
         <>
           <dl className="mt-8 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
-            {[
-              { rotulo: `Total de ${periodo}`, valor: totalFdca + totalFdi },
-              { rotulo: "Criança e Adolescente", valor: totalFdca, cor: "bg-fdca" },
-              { rotulo: "Pessoa Idosa", valor: totalFdi, cor: "bg-fdi" },
-            ].map((item) => (
+            {(oficiais ? [
+              { rotulo: `Total declarado de ${periodo}`, valor: formatarMoedaCompacta(totalDestinado), completo: formatarMoeda(totalDestinado) },
+              { rotulo: "Doações declaradas", valor: formatarInteiro(totalDoacoes) },
+              { rotulo: "DARFs pagos", valor: formatarMoedaCompacta(totalDarf), completo: formatarMoeda(totalDarf) },
+            ] : [
+              { rotulo: `Total de ${periodo}`, valor: formatarMoedaCompacta(totalFdca + totalFdi), completo: formatarMoeda(totalFdca + totalFdi) },
+              { rotulo: "Criança e Adolescente", valor: formatarMoedaCompacta(totalFdca), completo: formatarMoeda(totalFdca), cor: "bg-fdca" },
+              { rotulo: "Pessoa Idosa", valor: formatarMoedaCompacta(totalFdi), completo: formatarMoeda(totalFdi), cor: "bg-fdi" },
+            ]).map((item) => (
               <div key={item.rotulo} className="bg-surface p-5">
                 <dt className="flex items-center gap-2 text-[0.9375rem] text-ink-soft">
                   {item.cor && <span aria-hidden="true" className={`size-2.5 rounded-sm ${item.cor}`} />}
                   {item.rotulo}
                 </dt>
-                <dd className="mt-1 font-serif text-2xl font-bold tabular-nums" title={formatarMoeda(item.valor)}>
-                  {formatarMoedaCompacta(item.valor)}
+                <dd className="mt-1 font-serif text-2xl font-bold tabular-nums" title={item.completo || item.valor}>
+                  {item.valor}
                 </dd>
               </div>
             ))}
@@ -111,6 +121,9 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
               <h2 id="titulo-linha-tempo" className="text-2xl font-bold">Ano a ano</h2>
               <FundLegend />
             </div>
+            {oficiais && <p className="mt-3 text-sm text-ink-muted">
+              Valores totais oficiais; divisão entre os fundos apenas em percentuais arredondados.
+            </p>}
 
             <div
               aria-hidden="true"
@@ -136,19 +149,21 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
                   >
                     <span className="font-serif text-xl font-bold">{h.ano}</span>
                     <div className="self-center">
-                      <FundSplitBar fdca={h.valorFdca} fdi={h.valorFdi} maximo={maior} altura="h-4" />
+                      <FundSplitBar fdca={h.valorFdca} fdi={h.valorFdi}
+                        percentualFdca={h.percentualFdca} percentualFdi={h.percentualFdi}
+                        valorTotal={h.valorTotal} maximo={maior} altura="h-4" />
                     </div>
                     <dl className="col-span-2 grid grid-cols-3 gap-2 text-sm md:col-span-3 md:text-[0.9375rem]">
                       <div className="md:text-right">
                         <dt className="text-ink-muted md:sr-only">Criança</dt>
-                        <dd className="tabular-nums">{formatarMoeda(h.valorFdca)}</dd>
+                        <dd className="tabular-nums">{oficiais ? `${h.percentualFdca.toFixed(1)}%` : formatarMoeda(h.valorFdca)}</dd>
                         {h.doacoesFdca > 0 && (
                           <dd className="text-xs text-ink-muted">{formatarInteiro(h.doacoesFdca)} doações</dd>
                         )}
                       </div>
                       <div className="md:text-right">
                         <dt className="text-ink-muted md:sr-only">Idoso</dt>
-                        <dd className="tabular-nums">{formatarMoeda(h.valorFdi)}</dd>
+                        <dd className="tabular-nums">{oficiais ? `${h.percentualFdi.toFixed(1)}%` : formatarMoeda(h.valorFdi)}</dd>
                         {h.doacoesFdi > 0 && (
                           <dd className="text-xs text-ink-muted">{formatarInteiro(h.doacoesFdi)} doações</dd>
                         )}
