@@ -40,8 +40,16 @@ export default function Transparency() {
         if (chave !== "pagina") novo.delete("pagina");
         return novo;
       },
-      { replace: chave === "busca" }
+      // Os filtros ficam na URL (o link pode ser compartilhado), mas mudar
+      // um filtro não é trocar de página: mantém a rolagem onde está.
+      { replace: chave === "busca", preventScrollReset: true }
     );
+  }
+
+  // Ao trocar de página da tabela, volta ao início da tabela (não ao topo do site)
+  function irParaPagina(p) {
+    alterarFiltro("pagina", p > 1 ? String(p) : "");
+    document.getElementById("titulo-lista")?.scrollIntoView({ block: "start" });
   }
 
   return (
@@ -93,7 +101,7 @@ export default function Transparency() {
             <MapaRepasses ano={ano} />
 
             <section aria-labelledby="titulo-lista">
-              <h2 id="titulo-lista" className="mb-4 text-2xl font-bold">Todos os municípios em {ano}</h2>
+              <h2 id="titulo-lista" className="mb-4 scroll-mt-24 text-2xl font-bold">Todos os municípios em {ano}</h2>
 
               <Filtros
                 busca={busca}
@@ -106,7 +114,7 @@ export default function Transparency() {
                 busca={busca}
                 ordem={ordem}
                 pagina={pagina}
-                onPagina={(p) => alterarFiltro("pagina", p > 1 ? String(p) : "")}
+                onPagina={irParaPagina}
               />
             </section>
           </>
