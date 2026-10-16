@@ -6,11 +6,17 @@ const porcentagem = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFr
 
 // O que o mapa pode colorir. A fonte oficial só traz o valor exato do total;
 // por fundo há apenas percentuais arredondados, por isso não há modo por fundo.
+//
+// A Receita publica os valores por dois endereços diferentes:
+//   - valorTotal ("Destinado na declaração"): pelo endereço do FUNDO que recebeu;
+//   - potencial e destinacaoPf ("Destinações por localidade"): pelo endereço de
+//     QUEM DECLAROU.
+// O aproveitamento precisa usar a mesma base nas duas pontas: destinacaoPf ÷ potencial.
 export const METRICAS = {
   total: {
     rotulo: "Valor destinado",
     rotuloCurto: "Valor",
-    descricao: "Quanto os contribuintes destinaram aos fundos do município.",
+    descricao: "Quanto os fundos do município receberam dos contribuintes.",
     cor: "var(--color-brand)",
     valor: (linha) => linha.valorTotal,
     formatar: formatarMoeda,
@@ -20,9 +26,10 @@ export const METRICAS = {
     rotulo: "Aproveitamento do potencial",
     rotuloCurto: "% do potencial",
     descricao:
-      "Quanto do valor que os contribuintes poderiam destinar foi de fato destinado. Compara cidades grandes e pequenas.",
+      "Quanto do valor que os moradores poderiam destinar eles de fato destinaram, a fundos de qualquer cidade. Compara cidades grandes e pequenas.",
     cor: "var(--color-potencial)",
-    valor: (linha) => (linha.potencial > 0 ? linha.valorTotal / linha.potencial : 0),
+    valor: (linha) =>
+      linha.potencial > 0 && linha.destinacaoPf != null ? linha.destinacaoPf / linha.potencial : 0,
     formatar: (v) => porcentagem.format(v),
     formatarCurto: (v) => porcentagem.format(v),
   },

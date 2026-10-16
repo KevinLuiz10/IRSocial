@@ -54,6 +54,8 @@ const repasses = municipios.flatMap((m, i) => {
       municipio: m.nome,
       ano,
       potencial: arredondar(valorTotal * (8 + rnd() * 30)),
+      // Moradores também doam a fundos de outras cidades (e vice-versa)
+      destinacao_pf: arredondar(valorTotal * (0.6 + rnd() * 0.8)),
       valor_total: valorTotal,
       doacoes_total: doacoes,
       percentual_fdca: percentualFdca,
