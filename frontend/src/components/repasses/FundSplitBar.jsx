@@ -1,6 +1,6 @@
 import { formatarMoeda, formatarPercentual } from "../../utils/format";
 
-// O mock/planilhas completas informam valores por fundo; a tabela HTML oficial
+// A planilha detalhada informa valores por fundo; a tabela HTML oficial
 // da Receita publica apenas percentuais arredondados. Nunca transforma um
 // percentual em valor monetario exato.
 export default function FundSplitBar({
