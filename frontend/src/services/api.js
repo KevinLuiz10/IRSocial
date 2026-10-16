@@ -2,9 +2,6 @@
 // Em desenvolvimento o Vite encaminha "/api" para localhost:8080 (ver vite.config.js).
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-export const USANDO_DADOS_DEMONSTRATIVOS =
-  import.meta.env.VITE_USE_MOCK === "true";
-
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);

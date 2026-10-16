@@ -1,12 +1,8 @@
-import { apiFetch, USANDO_DADOS_DEMONSTRATIVOS } from "./api";
+import { apiFetch } from "./api";
 
-// Os dados demonstrativos só são baixados quando VITE_USE_MOCK=true
-const carregarMock = () => import("../data/repassesMock");
-
-// Contrato esperado da API (ver relatório de integração). O normalizador aceita
-// tanto camelCase quanto as colunas snake_case das views do banco
-// (v_repasse_municipio_ano etc.) e converte os NUMERIC, que o driver pg
-// devolve como string, para número.
+// Consome as rotas de backend/routes-repasses.js. O normalizador aceita tanto
+// camelCase quanto as colunas snake_case do banco e converte os NUMERIC, que o
+// driver pg devolve como string, para número.
 
 function opcional(valor) {
   return valor === undefined || valor === null ? null : num(valor);
@@ -43,9 +39,7 @@ function ultimaAtualizacao(resposta) {
 }
 
 export async function listarAnos() {
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).listarAnos()
-    : await apiFetch("/repasses/anos");
+  const r = await apiFetch("/repasses/anos");
   return {
     anos: r.anos.map(Number).sort((a, b) => b - a),
     ultimaAtualizacao: ultimaAtualizacao(r),
@@ -53,9 +47,7 @@ export async function listarAnos() {
 }
 
 export async function obterResumo(ano) {
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).obterResumo(ano)
-    : await apiFetch("/repasses/resumo", { params: { ano } });
+  const r = await apiFetch("/repasses/resumo", { params: { ano } });
   return {
     ...normalizarRepasse(r),
     municipios: num(r.municipios),
@@ -65,9 +57,7 @@ export async function obterResumo(ano) {
 
 export async function listarRepasses({ ano, busca, pagina = 1, limite = 20, ordem }) {
   const params = { ano, busca: busca?.trim(), pagina, limite, ordem };
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).listarRepasses(params)
-    : await apiFetch("/repasses", { params });
+  const r = await apiFetch("/repasses", { params });
   return {
     itens: (r.itens ?? r.dados ?? []).map(normalizarRepasse),
     total: num(r.total),
@@ -97,9 +87,7 @@ export async function listarRepassesDoAno(ano) {
 }
 
 export async function obterHistoricoMunicipio(municipioId) {
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).obterHistoricoMunicipio(municipioId)
-    : await apiFetch(`/municipios/${encodeURIComponent(municipioId)}/repasses`);
+  const r = await apiFetch(`/municipios/${encodeURIComponent(municipioId)}/repasses`);
   return {
     municipio: r.municipio,
     historico: r.historico.map(normalizarRepasse).sort((a, b) => a.ano - b.ano),
@@ -108,8 +96,6 @@ export async function obterHistoricoMunicipio(municipioId) {
 }
 
 export async function listarMunicipios() {
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).listarMunicipios()
-    : await apiFetch("/municipios");
+  const r = await apiFetch("/municipios");
   return r.map((m) => ({ id: m.id, nome: m.nome }));
 }

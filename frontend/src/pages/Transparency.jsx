@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import PageHeader from "../components/common/PageHeader";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
-import DemoNotice from "../components/repasses/DemoNotice";
 import MapaRepasses from "../components/repasses/MapaRepasses";
 import FonteReceita from "../components/repasses/FonteReceita";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
@@ -68,7 +67,6 @@ export default function Transparency() {
       </PageHeader>
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6">
-        <DemoNotice />
         <FonteReceita ano={ano || 2025} />
 
         {anos.error && !anos.data ? (

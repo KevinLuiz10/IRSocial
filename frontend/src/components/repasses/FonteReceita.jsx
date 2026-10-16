@@ -1,7 +1,4 @@
-import { USANDO_DADOS_DEMONSTRATIVOS } from "../../services/api";
-
 export default function FonteReceita({ ano = 2025 }) {
-  if (USANDO_DADOS_DEMONSTRATIVOS) return null;
   return (
     <p className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink-soft">
       <strong>Fonte oficial:</strong>{" "}
