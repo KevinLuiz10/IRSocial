@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import PageHeader from "../components/common/PageHeader";
-import { creditoAcademico, equipe } from "../data/equipe";
 
 export default function About() {
   return (
@@ -62,30 +61,14 @@ export default function About() {
           <div className="prose-ir">
             <h2 className="!mt-0">De onde vêm os dados</h2>
             <p>
-              Os valores da página de transparência vêm de planilhas publicadas
-              pela Receita Federal com as destinações feitas na declaração,
-              por município e por fundo. Elas são importadas para o nosso banco
-              de dados sempre que há uma nova versão.
+              Os valores da página de transparência vêm das estatísticas que a
+              Receita Federal publica todo ano sobre as destinações feitas na
+              declaração, por município do Paraná. O sistema confere a fonte
+              oficial diariamente e importa cada nova publicação para o nosso
+              banco de dados.
             </p>
           </div>
         </section>
-
-        {(equipe.length > 0 || creditoAcademico) && (
-          <section className="mt-14 border-t border-line pt-12">
-            <h2 className="text-2xl font-bold">Equipe</h2>
-            {creditoAcademico && <p className="mt-2 text-ink-soft">{creditoAcademico}</p>}
-            {equipe.length > 0 && (
-              <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                {equipe.map((pessoa) => (
-                  <li key={pessoa.nome}>
-                    <span className="font-semibold">{pessoa.nome}</span>
-                    {pessoa.papel && <span className="block text-ink-soft">{pessoa.papel}</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
       </div>
     </>
   );
