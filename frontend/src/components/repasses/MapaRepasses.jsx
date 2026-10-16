@@ -258,12 +258,18 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
       </div>
 
       {!linha || linha.valorTotal === 0 ? (
-        <p className="mt-4 text-ink-soft">
-          Não há destinações registradas para este município em {ano}.
-        </p>
+        <div className="mt-4 space-y-2 text-ink-soft">
+          <p>Os fundos deste município não receberam destinações em {ano}.</p>
+          {linha?.destinacaoPf > 0 && (
+            <p>
+              Mesmo assim, os moradores destinaram {formatarMoeda(linha.destinacaoPf)} a fundos de
+              outras cidades ({METRICAS.potencial.formatar(aproveitamento)} do potencial).
+            </p>
+          )}
+        </div>
       ) : (
         <>
-          <p className="mt-4 text-sm text-ink-soft">Destinado em {ano}</p>
+          <p className="mt-4 text-sm text-ink-soft">Recebido pelos fundos em {ano}</p>
           <p className="font-serif text-3xl font-bold tabular-nums">{formatarMoeda(linha.valorTotal)}</p>
           {posicao > 0 && (
             <p className="mt-1 text-sm text-ink-muted">
@@ -290,7 +296,7 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
             {linha.doacoesTotal != null && <Dado rotulo="Doações" valor={formatarInteiro(linha.doacoesTotal)} />}
             {linha.valorDarf != null && <Dado rotulo="DARFs pagos" valor={formatarMoeda(linha.valorDarf)} />}
             {aproveitamento != null && (
-              <Dado rotulo="Do potencial" valor={METRICAS.potencial.formatar(aproveitamento)} />
+              <Dado rotulo="Moradores: % do potencial" valor={METRICAS.potencial.formatar(aproveitamento)} />
             )}
           </dl>
 

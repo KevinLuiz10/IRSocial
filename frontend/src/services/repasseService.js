@@ -32,6 +32,7 @@ function normalizarRepasse(linha) {
     doacoesTotal: opcional(linha.doacoesTotal ?? linha.doacoes_total),
     valorDarf: opcional(linha.valorDarf ?? linha.valor_darf),
     potencial: opcional(linha.potencial),
+    destinacaoPf: opcional(linha.destinacaoPf ?? linha.destinacao_pf),
     estadualValor: opcional(linha.estadualValor ?? linha.estadual_valor),
     estadualDoacoes: opcional(linha.estadualDoacoes ?? linha.estadual_doacoes),
   };
