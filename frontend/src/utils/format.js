@@ -1,3 +1,5 @@
+import { nomeOficial } from "./municipios";
+
 const moeda = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -16,6 +18,10 @@ export const formatarMoeda = (valor) => moeda.format(valor ?? 0);
 export const formatarMoedaCompacta = (valor) => moedaCompacta.format(valor ?? 0);
 export const formatarInteiro = (valor) => inteiro.format(valor ?? 0);
 
+// Percentual já em escala 0–100 (como a Receita publica): 73.7 → "73,7%"
+const decimal1 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+export const formatarPercentual = (valor) => `${decimal1.format(valor ?? 0)}%`;
+
 export function formatarData(valor) {
   if (!valor) return "—";
   const data = new Date(valor);
@@ -27,12 +33,15 @@ export function formatarData(valor) {
   });
 }
 
-// O banco guarda os nomes em MAIÚSCULAS ("SÃO JOSÉ DOS PINHAIS").
-// Para leitura, convertemos para "São José dos Pinhais".
+// O banco guarda os nomes como a Receita publica: MAIÚSCULAS e sem acento
+// ("SAO JOSE DOS PINHAIS"). Para leitura usamos o nome oficial do IBGE
+// ("São José dos Pinhais"); se não houver, só ajustamos as maiúsculas.
 const CONECTIVOS = new Set(["de", "da", "do", "das", "dos", "e", "d'"]);
 
 export function formatarNomeMunicipio(nome) {
   if (!nome) return "";
+  const oficial = nomeOficial(nome);
+  if (oficial) return oficial;
   return nome
     .toLocaleLowerCase("pt-BR")
     .split(" ")

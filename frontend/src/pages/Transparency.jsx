@@ -16,6 +16,7 @@ import {
   formatarMoeda,
   formatarMoedaCompacta,
   formatarNomeMunicipio,
+  formatarPercentual,
 } from "../utils/format";
 
 const POR_PAGINA = 20;
@@ -162,14 +163,14 @@ function ResumoAno({ ano }) {
           percentualFdca={data.percentualFdca} percentualFdi={data.percentualFdi}
           valorTotal={data.valorTotal} altura="h-2" />
         {oficiais && <p className="mt-2 text-sm text-ink-soft">
-          Criança e Adolescente: {data.percentualFdca.toFixed(1)}% · Pessoa Idosa: {data.percentualFdi.toFixed(1)}%
+          Criança e Adolescente: {formatarPercentual(data.percentualFdca)} · Pessoa Idosa: {formatarPercentual(data.percentualFdi)}
           <span className="text-ink-muted"> (percentuais divulgados pela Receita)</span>
         </p>}
       </div>
       <p className="mt-2 text-sm text-ink-muted">
         {formatarInteiro(data.municipios)} municípios com dados publicados no ano.
         {oficiais && data.estadualValor > 0 && (
-          <span className="block mt-1">O total do Paraná inclui também {formatarMoeda(data.estadualValor)}
+          <span className="block mt-1">O total do Paraná inclui também {formatarMoeda(data.estadualValor)}{" "}
             em destinações à linha ESTADUAL ({formatarInteiro(data.estadualDoacoes)} doações),
             apresentada separadamente dos municípios na fonte.</span>
         )}
@@ -314,8 +315,8 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                       percentualFdca={item.percentualFdca} percentualFdi={item.percentualFdi}
                       valorTotal={item.valorTotal} maximo={maior} />
                   </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? formatarPercentual(item.percentualFdca) : formatarMoeda(item.valorFdca)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? formatarPercentual(item.percentualFdi) : formatarMoeda(item.valorFdi)}</td>
                   <td className="py-3 text-right font-semibold tabular-nums">{formatarMoeda(item.valorTotal)}</td>
                 </tr>
               ))}
@@ -340,11 +341,11 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                 <dl className="mt-2 flex flex-wrap gap-x-5 text-sm text-ink-soft">
                   <div className="flex gap-1">
                     <dt>Criança:</dt>
-                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</dd>
+                    <dd className="tabular-nums">{oficiais ? formatarPercentual(item.percentualFdca) : formatarMoeda(item.valorFdca)}</dd>
                   </div>
                   <div className="flex gap-1">
                     <dt>Idoso:</dt>
-                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</dd>
+                    <dd className="tabular-nums">{oficiais ? formatarPercentual(item.percentualFdi) : formatarMoeda(item.valorFdi)}</dd>
                   </div>
                 </dl>
               </li>

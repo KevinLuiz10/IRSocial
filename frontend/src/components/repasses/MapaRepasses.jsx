@@ -7,7 +7,7 @@ import Loading from "../common/Loading";
 import ErrorMessage from "../common/ErrorMessage";
 import { useRequest } from "../../hooks/useRequest";
 import { listarRepassesDoAno } from "../../services/repasseService";
-import { formatarMoeda, formatarInteiro } from "../../utils/format";
+import { formatarMoeda, formatarInteiro, formatarPercentual } from "../../utils/format";
 import {
   calcularLimites,
   chaveMunicipio,
@@ -31,8 +31,8 @@ export default function MapaRepasses({ ano }) {
     return montarVisao(malha.data, dados.data.itens, metrica);
   }, [malha.data, dados.data, metrica]);
 
-  // Avisa no console (só em desenvolvimento) quais nomes da planilha não
-  // casaram com o IBGE, para o grupo corrigir grafias diferentes.
+  // Avisa no console (só em desenvolvimento) quais nomes da Receita não
+  // casaram com o IBGE; nesse caso, acrescente a grafia em utils/municipios.js.
   useEffect(() => {
     if (import.meta.env.DEV && visao?.semCorrespondencia.length) {
       console.warn("Municípios sem correspondência no mapa:", visao.semCorrespondencia);
@@ -56,11 +56,11 @@ export default function MapaRepasses({ ano }) {
   return (
     <section aria-labelledby="titulo-mapa">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 id="titulo-mapa" className="text-2xl font-bold">Mapa dos repasses em {ano}</h2>
+        <div className="max-w-2xl">
+          <h2 id="titulo-mapa" className="text-2xl font-bold">Mapa das destinações em {ano}</h2>
           <p className="mt-1 text-ink-soft">
-            Quanto mais escuro, mais os contribuintes do município destinaram.
-            Clique em um município para ver os valores.
+            {info.descricao} Quanto mais escuro, maior. Clique em um município
+            para ver os detalhes.
           </p>
         </div>
         <SeletorMetrica valor={metrica} onChange={setMetrica} />
@@ -81,12 +81,13 @@ export default function MapaRepasses({ ano }) {
                 municipios={visao.municipios}
                 cores={visao.cores}
                 rotuloMetrica={info.rotulo}
+                formatarValor={info.formatar}
                 selecionado={selecionado}
                 onSelecionar={setSelecionado}
               />
             </div>
             <div className="mt-4 border-t border-line pt-4">
-              <p className="mb-2 text-sm font-semibold">{info.rotulo}: valor destinado em {ano}</p>
+              <p className="mb-2 text-sm font-semibold">{info.rotulo} em {ano}</p>
               <MapLegend rotulos={visao.rotulos} cores={visao.cores} />
             </div>
           </div>
@@ -102,18 +103,17 @@ export default function MapaRepasses({ ano }) {
         </div>
       )}
 
-      <p className="mt-3 text-xs text-ink-muted">Malha municipal: IBGE.</p>
+      <p className="mt-3 text-xs text-ink-muted">Malha municipal: IBGE. Valores: Receita Federal.</p>
     </section>
   );
 }
 
 function montarVisao(malha, itens, metrica) {
-  const { campo, cor } = METRICAS[metrica];
+  const { valor: valorDe, cor, formatarCurto } = METRICAS[metrica];
   const porChave = new Map(itens.map((item) => [chaveMunicipio(item.municipio), item]));
   const chavesDoMapa = new Set();
 
-  const valores = itens.map((item) => item[campo]);
-  const limites = calcularLimites(valores);
+  const limites = calcularLimites(itens.map(valorDe));
   const totalFaixas = limites.length + 1;
   const cores = Array.from({ length: totalFaixas }, (_, i) => corDaFaixa(i, totalFaixas, cor));
 
@@ -121,7 +121,7 @@ function montarVisao(malha, itens, metrica) {
     const chave = chaveMunicipio(m.nome);
     chavesDoMapa.add(chave);
     const linha = porChave.get(chave) ?? null;
-    const valor = linha ? linha[campo] : 0;
+    const valor = linha ? valorDe(linha) : 0;
     return { ...m, linha, valor, faixa: valor > 0 ? faixaDoValor(valor, limites) : null };
   });
 
@@ -132,7 +132,7 @@ function montarVisao(malha, itens, metrica) {
   return {
     municipios,
     cores,
-    rotulos: rotulosDasFaixas(limites),
+    rotulos: rotulosDasFaixas(limites, formatarCurto),
     ranking,
     semCorrespondencia: itens
       .filter((item) => !chavesDoMapa.has(chaveMunicipio(item.municipio)))
@@ -143,7 +143,7 @@ function montarVisao(malha, itens, metrica) {
 function SeletorMetrica({ valor, onChange }) {
   return (
     <fieldset>
-      <legend className="sr-only">Fundo exibido no mapa</legend>
+      <legend className="sr-only">O que o mapa mostra</legend>
       <div className="inline-flex rounded-md border border-line-strong bg-surface p-0.5">
         {Object.entries(METRICAS).map(([chave, { rotuloCurto }]) => (
           <label
@@ -201,6 +201,7 @@ function BuscaNoMapa({ municipios, onEscolher }) {
 function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFechar }) {
   const painelRef = useRef(null);
   const codigo = municipio?.codigo;
+  const info = METRICAS[metrica];
 
   // Em telas estreitas o painel fica abaixo do mapa: rola até ele ao selecionar
   useEffect(() => {
@@ -210,10 +211,10 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
 
   if (!municipio) {
     return (
-      <aside aria-label="Maiores repasses" className="rounded-lg border border-line bg-surface p-5">
+      <aside aria-label="Maiores valores" className="rounded-lg border border-line bg-surface p-5">
         <h3 className="font-sans text-base font-semibold">
           Maiores valores em {ano}
-          <span className="block text-sm font-normal text-ink-soft">{METRICAS[metrica].rotulo}</span>
+          <span className="block text-sm font-normal text-ink-soft">{info.rotulo}</span>
         </h3>
         <ol className="mt-3 divide-y divide-line">
           {ranking.slice(0, 8).map((m, i) => (
@@ -225,7 +226,7 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
               >
                 <span className="w-5 text-sm tabular-nums text-ink-muted">{i + 1}</span>
                 <span className="flex-1">{m.nome}</span>
-                <span className="text-sm tabular-nums">{formatarMoeda(m.valor)}</span>
+                <span className="text-sm tabular-nums">{info.formatar(m.valor)}</span>
               </button>
             </li>
           ))}
@@ -237,6 +238,7 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
 
   const linha = municipio.linha;
   const posicao = ranking.findIndex((m) => m.codigo === municipio.codigo) + 1;
+  const aproveitamento = linha?.potencial > 0 ? METRICAS.potencial.valor(linha) : null;
 
   return (
     <aside ref={painelRef} aria-live="polite" aria-label={`Detalhes de ${municipio.nome}`} className="rounded-lg border border-line bg-surface p-5">
@@ -261,32 +263,35 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
         </p>
       ) : (
         <>
-          <p className="mt-4 text-sm text-ink-soft">Total destinado em {ano}</p>
+          <p className="mt-4 text-sm text-ink-soft">Destinado em {ano}</p>
           <p className="font-serif text-3xl font-bold tabular-nums">{formatarMoeda(linha.valorTotal)}</p>
           {posicao > 0 && (
             <p className="mt-1 text-sm text-ink-muted">
-              {posicao}º de {formatarInteiro(ranking.length)} municípios ({METRICAS[metrica].rotulo.toLowerCase()})
+              {posicao}º de {formatarInteiro(ranking.length)} municípios em {info.rotulo.toLowerCase()}
             </p>
           )}
 
           <div className="mt-4">
-            <FundSplitBar fdca={linha.valorFdca} fdi={linha.valorFdi} altura="h-2.5" />
+            <FundSplitBar
+              fdca={linha.valorFdca}
+              fdi={linha.valorFdi}
+              percentualFdca={linha.percentualFdca}
+              percentualFdi={linha.percentualFdi}
+              valorTotal={linha.valorTotal}
+              altura="h-2.5"
+            />
           </div>
           <dl className="mt-3 space-y-1.5 text-[0.9375rem]">
-            <div className="flex justify-between gap-3">
-              <dt className="flex items-center gap-2 text-ink-soft">
-                <span aria-hidden="true" className="size-2.5 rounded-sm bg-fdca" />
-                Criança e Adolescente
-              </dt>
-              <dd className="tabular-nums">{formatarMoeda(linha.valorFdca)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="flex items-center gap-2 text-ink-soft">
-                <span aria-hidden="true" className="size-2.5 rounded-sm bg-fdi" />
-                Pessoa Idosa
-              </dt>
-              <dd className="tabular-nums">{formatarMoeda(linha.valorFdi)}</dd>
-            </div>
+            <LinhaFundo cor="bg-fdca" rotulo="Criança e Adolescente" valor={linha.valorFdca} percentual={linha.percentualFdca} />
+            <LinhaFundo cor="bg-fdi" rotulo="Pessoa Idosa" valor={linha.valorFdi} percentual={linha.percentualFdi} />
+          </dl>
+
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
+            {linha.doacoesTotal != null && <Dado rotulo="Doações" valor={formatarInteiro(linha.doacoesTotal)} />}
+            {linha.valorDarf != null && <Dado rotulo="DARFs pagos" valor={formatarMoeda(linha.valorDarf)} />}
+            {aproveitamento != null && (
+              <Dado rotulo="Do potencial" valor={METRICAS.potencial.formatar(aproveitamento)} />
+            )}
           </dl>
 
           {linha.municipioId != null && (
@@ -301,5 +306,28 @@ function PainelMunicipio({ ano, municipio, ranking, metrica, onEscolher, onFecha
         </>
       )}
     </aside>
+  );
+}
+
+// Com dados oficiais só há o percentual de cada fundo; com valores exatos, mostra em reais
+function LinhaFundo({ cor, rotulo, valor, percentual }) {
+  const texto = valor != null ? formatarMoeda(valor) : percentual != null ? formatarPercentual(percentual) : "—";
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className="flex items-center gap-2 text-ink-soft">
+        <span aria-hidden="true" className={`size-2.5 rounded-sm ${cor}`} />
+        {rotulo}
+      </dt>
+      <dd className="tabular-nums">{texto}</dd>
+    </div>
+  );
+}
+
+function Dado({ rotulo, valor }) {
+  return (
+    <div>
+      <dt className="text-ink-muted">{rotulo}</dt>
+      <dd className="font-semibold tabular-nums">{valor}</dd>
+    </div>
   );
 }

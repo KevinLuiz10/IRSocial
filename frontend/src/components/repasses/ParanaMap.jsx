@@ -10,6 +10,7 @@ export default function ParanaMap({
   municipios,
   cores,
   rotuloMetrica,
+  formatarValor = formatarMoeda,
   selecionado,
   onSelecionar,
 }) {
@@ -63,7 +64,7 @@ export default function ParanaMap({
         viewBox={`0 0 ${largura} ${altura}`}
         className="block h-auto w-full touch-manipulation select-none"
         role="img"
-        aria-label={`Mapa do Paraná com os municípios coloridos pelo valor destinado (${rotuloMetrica}). A mesma informação está na tabela abaixo.`}
+        aria-label={`Mapa do Paraná com os municípios coloridos por ${rotuloMetrica.toLowerCase()}. A mesma informação está na tabela abaixo.`}
         onPointerMove={aoMover}
         onClick={(e) => {
           const codigo = codigoDoEvento(e);
@@ -96,7 +97,7 @@ export default function ParanaMap({
         >
           <p className="font-semibold text-ink">{emHover.nome}</p>
           <p className="tabular-nums text-ink-soft">
-            {emHover.faixa === null ? "Sem destinações no ano" : formatarMoeda(emHover.valor)}
+            {emHover.faixa === null ? "Sem destinações no ano" : formatarValor(emHover.valor)}
           </p>
         </div>
       )}
