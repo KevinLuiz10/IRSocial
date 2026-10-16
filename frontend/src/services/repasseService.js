@@ -76,14 +76,22 @@ export async function listarRepasses({ ano, busca, pagina = 1, limite = 20, orde
   };
 }
 
-// Todos os municípios de um ano, sem paginação: usado pelo mapa
+// Todos os municípios de um ano, usado pelo mapa. Reaproveita a listagem
+// paginada da API (máximo de 100 por página): busca a primeira página e,
+// sabendo o total, as demais em paralelo. Para os 399 municípios: 4 chamadas.
+const MAXIMO_POR_PAGINA = 100;
+
 export async function listarRepassesDoAno(ano) {
-  const r = USANDO_DADOS_DEMONSTRATIVOS
-    ? await (await carregarMock()).listarRepassesDoAno(ano)
-    : await apiFetch("/repasses/mapa", { params: { ano } });
+  const primeira = await listarRepasses({ ano, pagina: 1, limite: MAXIMO_POR_PAGINA });
+  const totalPaginas = Math.ceil(primeira.total / MAXIMO_POR_PAGINA);
+  const demais = await Promise.all(
+    Array.from({ length: Math.max(0, totalPaginas - 1) }, (_, i) =>
+      listarRepasses({ ano, pagina: i + 2, limite: MAXIMO_POR_PAGINA })
+    )
+  );
   return {
-    itens: (r.itens ?? r.dados ?? []).map(normalizarRepasse),
-    ultimaAtualizacao: ultimaAtualizacao(r),
+    itens: [primeira, ...demais].flatMap((p) => p.itens),
+    ultimaAtualizacao: primeira.ultimaAtualizacao,
   };
 }
 

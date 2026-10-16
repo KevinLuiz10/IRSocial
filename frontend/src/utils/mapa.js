@@ -1,23 +1,34 @@
-import { formatarMoedaCompacta } from "./format";
+import { formatarMoeda, formatarMoedaCompacta } from "./format";
 
-// O banco não tem o código IBGE dos municípios, só o nome vindo da planilha.
-// Para cruzar com o mapa, comparamos nomes sem acento, pontuação ou espaços:
-// "DIAMANTE D'OESTE" e "Diamante D'Oeste" viram "DIAMANTEDOESTE".
-export function chaveMunicipio(nome) {
-  return String(nome)
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-}
+export { chaveMunicipio } from "./municipios";
 
+const porcentagem = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 });
+
+// O que o mapa pode colorir. A fonte oficial só traz o valor exato do total;
+// por fundo há apenas percentuais arredondados, por isso não há modo por fundo.
 export const METRICAS = {
-  total: { rotulo: "Total", rotuloCurto: "Total", campo: "valorTotal", cor: "var(--color-brand)" },
-  fdca: { rotulo: "Criança e Adolescente", rotuloCurto: "Criança", campo: "valorFdca", cor: "var(--color-fdca)" },
-  fdi: { rotulo: "Pessoa Idosa", rotuloCurto: "Idoso", campo: "valorFdi", cor: "var(--color-fdi)" },
+  total: {
+    rotulo: "Valor destinado",
+    rotuloCurto: "Valor",
+    descricao: "Quanto os contribuintes destinaram aos fundos do município.",
+    cor: "var(--color-brand)",
+    valor: (linha) => linha.valorTotal,
+    formatar: formatarMoeda,
+    formatarCurto: formatarMoedaCompacta,
+  },
+  potencial: {
+    rotulo: "Aproveitamento do potencial",
+    rotuloCurto: "% do potencial",
+    descricao:
+      "Quanto do valor que os contribuintes poderiam destinar foi de fato destinado. Compara cidades grandes e pequenas.",
+    cor: "var(--color-potencial)",
+    valor: (linha) => (linha.potencial > 0 ? linha.valorTotal / linha.potencial : 0),
+    formatar: (v) => porcentagem.format(v),
+    formatarCurto: (v) => porcentagem.format(v),
+  },
 };
 
-// Escala sequencial: um único tom, do claro (pouco repasse) ao escuro (muito repasse)
+// Escala sequencial: um único tom, do claro (pouco) ao escuro (muito)
 const INTENSIDADES = [14, 32, 52, 74, 100];
 
 export function corDaFaixa(indice, totalFaixas, corBase) {
@@ -33,7 +44,7 @@ function arredondar(valor) {
   return Math.round(valor / magnitude) * magnitude;
 }
 
-// Faixas por quantis: os repasses são muito concentrados (a capital recebe
+// Faixas por quantis: os valores são muito concentrados (a capital recebe
 // muito mais que o resto), então faixas de tamanho igual deixariam quase
 // todo o mapa com a mesma cor. Com quantis, cada faixa tem ~1/5 dos municípios.
 export function calcularLimites(valores, faixas = 5) {
@@ -53,12 +64,11 @@ export function faixaDoValor(valor, limites) {
   return i === -1 ? limites.length : i;
 }
 
-export function rotulosDasFaixas(limites) {
-  if (limites.length === 0) return ["Com repasse"];
-  const f = formatarMoedaCompacta;
+export function rotulosDasFaixas(limites, formatar) {
+  if (limites.length === 0) return ["Com destinações"];
   return [
-    `Até ${f(limites[0])}`,
-    ...limites.slice(1).map((limite, i) => `${f(limites[i])} a ${f(limite)}`),
-    `Acima de ${f(limites.at(-1))}`,
+    `Até ${formatar(limites[0])}`,
+    ...limites.slice(1).map((limite, i) => `${formatar(limites[i])} a ${formatar(limite)}`),
+    `Acima de ${formatar(limites.at(-1))}`,
   ];
 }

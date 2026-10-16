@@ -1,8 +1,14 @@
-// Gera src/data/mapaParana.json com o contorno dos municípios do Paraná em
-// caminhos SVG, a partir das APIs públicas do IBGE. Rode só quando quiser
-// atualizar a malha (ela muda raramente):
+// Gera, a partir das APIs públicas do IBGE:
+//   - src/data/mapaParana.json: contorno dos municípios do Paraná em caminhos SVG;
+//   - src/data/municipiosParana.json: só código e nome oficial (leve, usado
+//     para exibir os nomes com acento em todo o site).
+// Rode só quando quiser atualizar a malha (ela muda raramente):
 //
 //   node scripts/gerar-mapa-parana.mjs
+//
+// Se aparecer "unable to verify the first certificate", o servidor do IBGE
+// não enviou a cadeia completa; use os certificados do sistema:
+//   node --use-system-ca scripts/gerar-mapa-parana.mjs
 //
 // O site não chama o IBGE em tempo de execução: o JSON gerado vai junto no build.
 
@@ -14,6 +20,7 @@ const URL_MALHA = `https://servicodados.ibge.gov.br/api/v3/malhas/estados/${UF_P
 const URL_NOMES = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${UF_PR}/municipios`;
 const LARGURA = 1000;
 const SAIDA = new URL("../src/data/mapaParana.json", import.meta.url);
+const SAIDA_NOMES = new URL("../src/data/municipiosParana.json", import.meta.url);
 
 async function baixar(url) {
   const resposta = await fetch(url);
@@ -78,5 +85,9 @@ const fonte = "IBGE – Malhas territoriais e Localidades (servicodados.ibge.gov
 await writeFile(
   SAIDA,
   JSON.stringify({ fonte, largura: LARGURA, altura, municipios }) + "\n"
+);
+await writeFile(
+  SAIDA_NOMES,
+  JSON.stringify(municipios.map(({ codigo, nome }) => ({ codigo, nome }))) + "\n"
 );
 console.log(`${municipios.length} municípios gravados em ${fileURLToPath(SAIDA)} (${LARGURA}×${altura})`);

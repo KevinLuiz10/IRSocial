@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { faqData } from "../data/faqData.js";
 import { useRequest } from "../hooks/useRequest";
 import { listarAnos, obterResumo } from "../services/repasseService";
-import { formatarMoeda, formatarMoedaCompacta } from "../utils/format";
+import { formatarInteiro, formatarMoeda, formatarMoedaCompacta, formatarPercentual } from "../utils/format";
 import FundSplitBar from "../components/repasses/FundSplitBar";
 import Loading from "../components/common/Loading";
 
@@ -169,7 +169,7 @@ function ResumoTransparencia() {
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
         <div>
-          <h2 className="text-3xl font-bold">Acompanhe os repasses no Paraná</h2>
+          <h2 className="text-3xl font-bold">Acompanhe as destinações no Paraná</h2>
           <p className="mt-3 text-ink-soft">
             Reunimos os dados da Receita Federal sobre quanto os contribuintes
             de cada município destinaram aos fundos, ano a ano.
@@ -190,8 +190,7 @@ function ResumoTransparencia() {
           ) : (
             <>
               <p className="text-ink-soft">
-                Total destinado em {data.ano} por contribuintes de{" "}
-                {data.municipios} {data.municipios === 1 ? "município" : "municípios"}
+                Destinado aos fundos do Paraná na declaração de {data.ano}
               </p>
               <p
                 className="mt-1 font-serif text-4xl font-bold tabular-nums sm:text-5xl"
@@ -199,30 +198,45 @@ function ResumoTransparencia() {
               >
                 {formatarMoedaCompacta(data.valorTotal)}
               </p>
+              {data.doacoesTotal != null && (
+                <p className="mt-1 text-sm text-ink-muted">
+                  {formatarInteiro(data.doacoesTotal)} doações de contribuintes
+                </p>
+              )}
               <div className="mt-5">
-                <FundSplitBar fdca={data.valorFdca} fdi={data.valorFdi} altura="h-3" />
+                <FundSplitBar
+                  fdca={data.valorFdca}
+                  fdi={data.valorFdi}
+                  percentualFdca={data.percentualFdca}
+                  percentualFdi={data.percentualFdi}
+                  valorTotal={data.valorTotal}
+                  altura="h-3"
+                />
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="flex items-center gap-2 text-ink-soft">
-                    <span aria-hidden="true" className="size-2.5 rounded-sm bg-fdca" />
-                    Criança e Adolescente
-                  </dt>
-                  <dd className="mt-0.5 font-semibold tabular-nums">{formatarMoeda(data.valorFdca)}</dd>
-                </div>
-                <div>
-                  <dt className="flex items-center gap-2 text-ink-soft">
-                    <span aria-hidden="true" className="size-2.5 rounded-sm bg-fdi" />
-                    Pessoa Idosa
-                  </dt>
-                  <dd className="mt-0.5 font-semibold tabular-nums">{formatarMoeda(data.valorFdi)}</dd>
-                </div>
+                <ParteDoFundo cor="bg-fdca" rotulo="Criança e Adolescente" valor={data.valorFdca} percentual={data.percentualFdca} />
+                <ParteDoFundo cor="bg-fdi" rotulo="Pessoa Idosa" valor={data.valorFdi} percentual={data.percentualFdi} />
               </dl>
             </>
           )}
         </div>
       </div>
     </section>
+  );
+}
+
+// A fonte oficial publica só o percentual de cada fundo; os dados de exemplo trazem o valor
+function ParteDoFundo({ cor, rotulo, valor, percentual }) {
+  return (
+    <div>
+      <dt className="flex items-center gap-2 text-ink-soft">
+        <span aria-hidden="true" className={`size-2.5 rounded-sm ${cor}`} />
+        {rotulo}
+      </dt>
+      <dd className="mt-0.5 font-semibold tabular-nums">
+        {valor != null ? formatarMoeda(valor) : percentual != null ? `${formatarPercentual(percentual)} do total` : "—"}
+      </dd>
+    </div>
   );
 }
 

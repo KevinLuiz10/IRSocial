@@ -1,4 +1,4 @@
-import { formatarMoeda } from "../../utils/format";
+import { formatarMoeda, formatarPercentual } from "../../utils/format";
 
 // O mock/planilhas completas informam valores por fundo; a tabela HTML oficial
 // da Receita publica apenas percentuais arredondados. Nunca transforma um
@@ -14,18 +14,18 @@ export default function FundSplitBar({
   const pctFdi = comValores ? (total ? (fdi / total) * 100 : 0) : (percentualFdi ?? 0);
   const descricao = comValores
     ? `Fundo da Criança: ${formatarMoeda(fdca)}; Fundo do Idoso: ${formatarMoeda(fdi)}`
-    : `Divisão percentual publicada pela Receita: Criança e Adolescente ${pctFdca.toFixed(1)}%; Pessoa Idosa ${pctFdi.toFixed(1)}%`;
+    : `Divisão percentual publicada pela Receita: Criança e Adolescente ${formatarPercentual(pctFdca)}; Pessoa Idosa ${formatarPercentual(pctFdi)}`;
 
   return (
     <div role="img" aria-label={rotulo ?? descricao} className="w-full">
       <div className={`flex ${altura} gap-0.5`} style={{ width: `${Math.max(escala * 100, total ? 1.5 : 0)}%` }}>
         {pctFdca > 0 && (
           <span className="rounded-l-sm bg-fdca" style={{ width: `${pctFdca}%` }}
-            title={comValores ? formatarMoeda(fdca) : `${pctFdca.toFixed(1)}%`} />
+            title={comValores ? formatarMoeda(fdca) : formatarPercentual(pctFdca)} />
         )}
         {pctFdi > 0 && (
           <span className="flex-1 rounded-r-sm bg-fdi"
-            title={comValores ? formatarMoeda(fdi) : `${pctFdi.toFixed(1)}%`} />
+            title={comValores ? formatarMoeda(fdi) : formatarPercentual(pctFdi)} />
         )}
       </div>
     </div>
