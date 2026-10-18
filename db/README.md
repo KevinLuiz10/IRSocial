@@ -4,6 +4,8 @@ Persistência da planilha de repasses (FDCA/FDI) por município do Paraná, por 
 
 ## Modelo de dados (DER)
 
+![DER do banco IR Social](der-irsocial.png)
+
 ```mermaid
 erDiagram
     FUNDO {
