@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import PageHeader from "../components/common/PageHeader";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
-import DemoNotice from "../components/repasses/DemoNotice";
+import MapaRepasses from "../components/repasses/MapaRepasses";
 import FonteReceita from "../components/repasses/FonteReceita";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
 import { useRequest } from "../hooks/useRequest";
@@ -15,6 +15,7 @@ import {
   formatarMoeda,
   formatarMoedaCompacta,
   formatarNomeMunicipio,
+  formatarPercentual,
 } from "../utils/format";
 
 const POR_PAGINA = 20;
@@ -38,8 +39,16 @@ export default function Transparency() {
         if (chave !== "pagina") novo.delete("pagina");
         return novo;
       },
-      { replace: chave === "busca" }
+      // Os filtros ficam na URL (o link pode ser compartilhado), mas mudar
+      // um filtro não é trocar de página: mantém a rolagem onde está.
+      { replace: chave === "busca", preventScrollReset: true }
     );
+  }
+
+  // Ao trocar de página da tabela, volta ao início da tabela (não ao topo do site)
+  function irParaPagina(p) {
+    alterarFiltro("pagina", p > 1 ? String(p) : "");
+    document.getElementById("titulo-lista")?.scrollIntoView({ block: "start" });
   }
 
   return (
@@ -58,7 +67,6 @@ export default function Transparency() {
       </PageHeader>
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6">
-        <DemoNotice />
         <FonteReceita ano={ano || 2025} />
 
         {anos.error && !anos.data ? (
@@ -72,14 +80,28 @@ export default function Transparency() {
           </p>
         ) : (
           <>
+            <div className="no-print flex items-center gap-3">
+              <label htmlFor="ano" className="font-semibold">Ano dos dados</label>
+              <select
+                id="ano"
+                className="field w-32"
+                value={ano}
+                onChange={(e) => alterarFiltro("ano", e.target.value)}
+              >
+                {(anos.data?.anos ?? []).map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+
             <ResumoAno ano={ano} />
 
+            <MapaRepasses ano={ano} />
+
             <section aria-labelledby="titulo-lista">
-              <h2 id="titulo-lista" className="sr-only">Repasses por município</h2>
+              <h2 id="titulo-lista" className="mb-4 scroll-mt-24 text-2xl font-bold">Todos os municípios em {ano}</h2>
 
               <Filtros
-                anos={anos.data?.anos ?? []}
-                ano={ano}
                 busca={busca}
                 ordem={ordem}
                 onChange={alterarFiltro}
@@ -90,7 +112,7 @@ export default function Transparency() {
                 busca={busca}
                 ordem={ordem}
                 pagina={pagina}
-                onPagina={(p) => alterarFiltro("pagina", p > 1 ? String(p) : "")}
+                onPagina={irParaPagina}
               />
             </section>
           </>
@@ -147,14 +169,14 @@ function ResumoAno({ ano }) {
           percentualFdca={data.percentualFdca} percentualFdi={data.percentualFdi}
           valorTotal={data.valorTotal} altura="h-2" />
         {oficiais && <p className="mt-2 text-sm text-ink-soft">
-          Criança e Adolescente: {data.percentualFdca.toFixed(1)}% · Pessoa Idosa: {data.percentualFdi.toFixed(1)}%
+          Criança e Adolescente: {formatarPercentual(data.percentualFdca)} · Pessoa Idosa: {formatarPercentual(data.percentualFdi)}
           <span className="text-ink-muted"> (percentuais divulgados pela Receita)</span>
         </p>}
       </div>
       <p className="mt-2 text-sm text-ink-muted">
         {formatarInteiro(data.municipios)} municípios com dados publicados no ano.
         {oficiais && data.estadualValor > 0 && (
-          <span className="block mt-1">O total do Paraná inclui também {formatarMoeda(data.estadualValor)}
+          <span className="block mt-1">O total do Paraná inclui também {formatarMoeda(data.estadualValor)}{" "}
             em destinações à linha ESTADUAL ({formatarInteiro(data.estadualDoacoes)} doações),
             apresentada separadamente dos municípios na fonte.</span>
         )}
@@ -163,15 +185,20 @@ function ResumoAno({ ano }) {
   );
 }
 
-function Filtros({ anos, ano, busca, ordem, onChange }) {
+function Filtros({ busca, ordem, onChange }) {
   // O campo de busca tem estado próprio e só atualiza a URL após uma pausa na digitação
   const [texto, setTexto] = useState(busca);
   const timer = useRef(null);
 
+  // Se a busca mudar por fora (botão voltar, link), o campo acompanha.
+  // Ignora a própria digitação, para não apagar um espaço no fim do texto.
+  const [buscaAnterior, setBuscaAnterior] = useState(busca);
+  if (busca !== buscaAnterior) {
+    setBuscaAnterior(busca);
+    if (busca !== texto.trim()) setTexto(busca);
+  }
+
   useEffect(() => () => clearTimeout(timer.current), []);
-  useEffect(() => {
-    setTexto(busca);
-  }, [busca]);
 
   function digitar(valor) {
     setTexto(valor);
@@ -180,7 +207,7 @@ function Filtros({ anos, ano, busca, ordem, onChange }) {
   }
 
   return (
-    <div className="no-print grid gap-4 border-b border-line pb-6 sm:grid-cols-[1fr_9rem_13rem]">
+    <div className="no-print grid gap-4 border-b border-line pb-6 sm:grid-cols-[1fr_13rem]">
       <div>
         <label htmlFor="busca" className="block text-[0.9375rem] font-semibold">
           Buscar município
@@ -201,17 +228,6 @@ function Filtros({ anos, ano, busca, ordem, onChange }) {
             onChange={(e) => digitar(e.target.value)}
           />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="ano" className="block text-[0.9375rem] font-semibold">
-          Ano
-        </label>
-        <select id="ano" className="field mt-1.5" value={ano} onChange={(e) => onChange("ano", e.target.value)}>
-          {anos.map((a) => (
-            <option key={a} value={a}>{a}</option>
-          ))}
-        </select>
       </div>
 
       <div>
@@ -305,8 +321,8 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                       percentualFdca={item.percentualFdca} percentualFdi={item.percentualFdi}
                       valorTotal={item.valorTotal} maximo={maior} />
                   </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</td>
-                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? formatarPercentual(item.percentualFdca) : formatarMoeda(item.valorFdca)}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums">{oficiais ? formatarPercentual(item.percentualFdi) : formatarMoeda(item.valorFdi)}</td>
                   <td className="py-3 text-right font-semibold tabular-nums">{formatarMoeda(item.valorTotal)}</td>
                 </tr>
               ))}
@@ -331,11 +347,11 @@ function ListaRepasses({ ano, busca, ordem, pagina, onPagina }) {
                 <dl className="mt-2 flex flex-wrap gap-x-5 text-sm text-ink-soft">
                   <div className="flex gap-1">
                     <dt>Criança:</dt>
-                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdca.toFixed(1)}%` : formatarMoeda(item.valorFdca)}</dd>
+                    <dd className="tabular-nums">{oficiais ? formatarPercentual(item.percentualFdca) : formatarMoeda(item.valorFdca)}</dd>
                   </div>
                   <div className="flex gap-1">
                     <dt>Idoso:</dt>
-                    <dd className="tabular-nums">{oficiais ? `${item.percentualFdi.toFixed(1)}%` : formatarMoeda(item.valorFdi)}</dd>
+                    <dd className="tabular-nums">{oficiais ? formatarPercentual(item.percentualFdi) : formatarMoeda(item.valorFdi)}</dd>
                   </div>
                 </dl>
               </li>

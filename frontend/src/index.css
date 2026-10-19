@@ -22,6 +22,9 @@
   --color-fdi: #b4740a;
   --color-fdi-tint: #f7ecd9;
 
+  /* Escala do mapa "% do potencial": tom próprio, para não ser confundido com um fundo */
+  --color-potencial: #7a3b69;
+
   --color-danger: #a8261b;
   --color-danger-tint: #fbeae8;
   --color-attention: #7a5100;

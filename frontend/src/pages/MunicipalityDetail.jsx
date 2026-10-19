@@ -2,7 +2,6 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import Loading from "../components/common/Loading";
 import ErrorMessage from "../components/common/ErrorMessage";
-import DemoNotice from "../components/repasses/DemoNotice";
 import FonteReceita from "../components/repasses/FonteReceita";
 import FundSplitBar, { FundLegend } from "../components/repasses/FundSplitBar";
 import { useRequest } from "../hooks/useRequest";
@@ -13,6 +12,7 @@ import {
   formatarMoeda,
   formatarMoedaCompacta,
   formatarNomeMunicipio,
+  formatarPercentual,
 } from "../utils/format";
 
 const variacao = new Intl.NumberFormat("pt-BR", {
@@ -84,7 +84,6 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
       </p>
 
       <div className="mt-6">
-        <DemoNotice />
         <FonteReceita ano={ultimo || 2025} />
       </div>
 
@@ -156,14 +155,14 @@ function Conteudo({ nome, historico, ultimaAtualizacao }) {
                     <dl className="col-span-2 grid grid-cols-3 gap-2 text-sm md:col-span-3 md:text-[0.9375rem]">
                       <div className="md:text-right">
                         <dt className="text-ink-muted md:sr-only">Criança</dt>
-                        <dd className="tabular-nums">{oficiais ? `${h.percentualFdca.toFixed(1)}%` : formatarMoeda(h.valorFdca)}</dd>
+                        <dd className="tabular-nums">{oficiais ? formatarPercentual(h.percentualFdca) : formatarMoeda(h.valorFdca)}</dd>
                         {h.doacoesFdca > 0 && (
                           <dd className="text-xs text-ink-muted">{formatarInteiro(h.doacoesFdca)} doações</dd>
                         )}
                       </div>
                       <div className="md:text-right">
                         <dt className="text-ink-muted md:sr-only">Idoso</dt>
-                        <dd className="tabular-nums">{oficiais ? `${h.percentualFdi.toFixed(1)}%` : formatarMoeda(h.valorFdi)}</dd>
+                        <dd className="tabular-nums">{oficiais ? formatarPercentual(h.percentualFdi) : formatarMoeda(h.valorFdi)}</dd>
                         {h.doacoesFdi > 0 && (
                           <dd className="text-xs text-ink-muted">{formatarInteiro(h.doacoesFdi)} doações</dd>
                         )}
